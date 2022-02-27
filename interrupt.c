@@ -95,7 +95,14 @@ void keyboard_routine()
   Byte key = inb(0x60);
 
   if ((key & 0x80) == 0) {
-    char character = char_map[key & 0x7F];
+    key &= 0x7F;
+
+    char character;
+    if (key > sizeof(char_map))
+      character = 'C';
+    else
+      character = char_map[key];
+
     if (character == '\0')
       character = 'C';
 
