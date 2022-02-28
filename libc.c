@@ -6,6 +6,8 @@
 
 #include <types.h>
 
+#include <errno.h>
+
 int errno;
 
 void itoa(int a, char *b)
@@ -41,5 +43,22 @@ int strlen(char *a)
   while (a[i]!=0) i++;
   
   return i;
+}
+
+void perror(void)
+{
+  switch (errno) {
+    case EACCES:
+      write(1, "Permission denied\n", 18);
+      break;
+    case EBADF:
+      write(1, "Bad file descriptor\n", 20);
+      break;
+    case EFAULT:
+      write(1, "Bad address\n", 12);
+      break;
+    case ENOSYS:
+      write(1, "System call not yet implemented\n", 32);
+  }
 }
 

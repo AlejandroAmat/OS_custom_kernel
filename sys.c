@@ -13,19 +13,23 @@
 
 #include <sched.h>
 
+#include <errno.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
+int zeos_ticks;
+
 int check_fd(int fd, int permissions)
 {
-  if (fd!=1) return -9; /*EBADF*/
-  if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
+  if (fd!=1) return -EBADF;
+  if (permissions!=ESCRIPTURA) return -EACCES;
   return 0;
 }
 
 int sys_ni_syscall()
 {
-	return -38; /*ENOSYS*/
+	return -ENOSYS;
 }
 
 int sys_getpid()
@@ -50,10 +54,12 @@ int sys_write(int fd, char * buffer, int size)
 {
   int error = check_fd(fd, ESCRIPTURA);
   if (error != 0) return error;
-  error = buffer == NULL;
-  if (error != 0) return -1;
-  error = size < 0;
-  if (error != 0) return -1;
+  if (buffer == NULL) return -EFAULT;
+  if (size < 0) return -1;
 
   return sys_write_console(buffer, size);
+}
+
+int sys_gettime() {
+  return zeos_ticks;
 }

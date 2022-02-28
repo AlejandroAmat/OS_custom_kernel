@@ -40,7 +40,7 @@ LIBZEOS = -L . -l zeos
 
 #add to USROBJ any object files required to complete the user program
 USROBJ = \
-	wrapper.o \
+	wrappers.o \
 	libc.o \
 	# libjp.a \
 
@@ -80,14 +80,14 @@ io.o:io.c $(INCLUDEDIR)/io.h
 
 sched.o:sched.c $(INCLUDEDIR)/sched.h
 
-wrapper.s:wrapper.S $(INCLUDEDIR)/asm.h
+wrappers.s:wrappers.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
 libc.o:libc.c $(INCLUDEDIR)/libc.h
 
 mm.o:mm.c $(INCLUDEDIR)/types.h $(INCLUDEDIR)/mm.h
 
-sys.o:sys.c $(INCLUDEDIR)/devices.h
+sys.o:sys.c $(INCLUDEDIR)/devices.h $(INCLUDEDIR)/errno.h
 
 utils.o:utils.c $(INCLUDEDIR)/utils.h
 

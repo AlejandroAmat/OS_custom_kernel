@@ -69,6 +69,13 @@
       movb $0x20, %al; \
       outb %al, $0x20;
 
+ENTRY(clock_handler)
+  SAVE_ALL
+  EOI
+  call clock_routine
+  RESTORE_ALL
+  iret
+
 ENTRY(keyboard_handler)
   SAVE_ALL
   EOI
@@ -87,12 +94,12 @@ ENTRY(system_call_handler)
   jl sysenter_err
   cmpl $MAX_SYSCALL, %eax
   jg sysenter_err
-  call *sys_call_table(, %eax, 0x4)
+  call *sys_call_table(, %eax, 4)
   jmp sysenter_fin
 sysenter_err:
   movl $-ENOSYS, %eax
 sysenter_fin:
-  movl %eax, 0x18(%esp)
+  movl %eax, 24(%esp)
   RESTORE_ALL
   movl (%esp), %edx
   movl 12(%esp), %ecx
