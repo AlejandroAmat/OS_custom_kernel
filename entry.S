@@ -78,8 +78,8 @@ ENTRY(clock_handler)
 
 ENTRY(keyboard_handler)
   SAVE_ALL
-  EOI
   call keyboard_routine
+  EOI
   RESTORE_ALL
   iret
 
