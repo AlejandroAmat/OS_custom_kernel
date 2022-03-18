@@ -9,3 +9,4 @@ ENTRY(writeMSR)
   wrmsr
   movl %ebp, %esp
   popl %ebp
+  ret

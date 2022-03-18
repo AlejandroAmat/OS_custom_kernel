@@ -28,6 +28,7 @@ SYSOBJ = \
 	sys_call_table.o \
 	io.o \
 	sched.o \
+	sched_asm.o \
 	sys.o \
 	mm.o \
 	devices.o \
@@ -69,7 +70,13 @@ entry.s: entry.S $(INCLUDEDIR)/asm.h $(INCLUDEDIR)/errno.h $(INCLUDEDIR)/segment
 sys_call_table.s: sys_call_table.S $(INCLUDEDIR)/asm.h $(INCLUDEDIR)/segment.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
+wrappers.s:wrappers.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
 msr.s: msr.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
+sched_asm.s:sched_asm.S $(INCLUDEDIR)/asm.h # $(INCLUDEDIR)/sched.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
 user.o:user.c $(INCLUDEDIR)/libc.h
@@ -80,9 +87,6 @@ io.o:io.c $(INCLUDEDIR)/io.h
 
 sched.o:sched.c $(INCLUDEDIR)/sched.h
 
-wrappers.s:wrappers.S $(INCLUDEDIR)/asm.h
-	$(CPP) $(ASMFLAGS) -o $@ $<
-
 libc.o:libc.c $(INCLUDEDIR)/libc.h
 
 mm.o:mm.c $(INCLUDEDIR)/types.h $(INCLUDEDIR)/mm.h
@@ -90,7 +94,6 @@ mm.o:mm.c $(INCLUDEDIR)/types.h $(INCLUDEDIR)/mm.h
 sys.o:sys.c $(INCLUDEDIR)/devices.h $(INCLUDEDIR)/errno.h
 
 utils.o:utils.c $(INCLUDEDIR)/utils.h
-
 
 system.o:system.c $(INCLUDEDIR)/hardware.h system.lds $(SYSOBJ) $(INCLUDEDIR)/segment.h $(INCLUDEDIR)/types.h $(INCLUDEDIR)/interrupt.h $(INCLUDEDIR)/system.h $(INCLUDEDIR)/sched.h $(INCLUDEDIR)/mm.h $(INCLUDEDIR)/io.h $(INCLUDEDIR)/mm_address.h 
 

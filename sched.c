@@ -9,14 +9,17 @@
 union task_union task[NR_TASKS]
   __attribute__((__section__(".data.task")));
 
-#if 0
 struct task_struct *list_head_to_task_struct(struct list_head *l)
 {
-  return list_entry( l, struct task_struct, list);
+  return (struct task_struct*) ((unsigned int)l&0xFFFFF000);
 }
-#endif
 
+extern TSS tss;
 extern struct list_head blocked;
+void writeMSR(int msr_num, long int value);
+void return_gate(Word ds, Word ss, DWord esp, Word cs, DWord eip);
+void inner_task_switch_asm(union task_union *new);
+int main(void);
 
 struct list_head freequeue;
 struct list_head readyqueue;
@@ -66,10 +69,11 @@ void init_idle (void)
 
   allocate_DIR(free_struct);
 
-  union task_union *free_union = (union task_union *)free_struct;
-  free_union->stack[KERNEL_STACK_SIZE - 1] = cpu_idle;
+  union task_union *free_union = (union task_union *) free_struct;
+  free_union->stack[KERNEL_STACK_SIZE - 2] = 0; //ebp !!sizeof(long)?
+  free_union->stack[KERNEL_STACK_SIZE - 1] = (long unsigned int) cpu_idle;
 
-  free_struct->kernel_esp = &free_union->stack[KERNEL_STACK_SIZE - 1];
+  free_struct->kernel_esp = (int *) &free_union->stack[KERNEL_STACK_SIZE - 2];
 
   idle_task = free_struct;
 }
@@ -86,8 +90,13 @@ void init_task1(void)
 
   set_user_pages(free_struct);
 
-  union task_union *free_union = (union task_union *)free_struct;
-  free_struct->kernel_esp = &free_union->stack[KERNEL_STACK_SIZE - 1];
+  union task_union *free_union = (union task_union *) free_struct;
+
+  tss.esp0 = (DWord) &free_union->stack[KERNEL_STACK_SIZE];
+  writeMSR(0x175, (long int) &free_union->stack[KERNEL_STACK_SIZE]);
+
+  page_table_entry* dir = get_DIR(free_struct);
+  set_cr3(dir);
 }
 
 
@@ -109,6 +118,16 @@ struct task_struct* current()
   	"movl %%esp, %0"
 	: "=g" (ret_value)
   );
-  return (struct task_struct*)(ret_value&0xfffff000);
+  return (struct task_struct*)(ret_value&0XFFFFF000);
 }
 
+void inner_task_switch(union task_union *new) {
+  tss.esp0 = (DWord) &new->stack[KERNEL_STACK_SIZE];
+  writeMSR(0x175, (long int) &new->stack[KERNEL_STACK_SIZE]);
+
+  struct task_struct *new_struct = (struct task_struct *) new;
+  page_table_entry *dir = get_DIR(new_struct);
+  set_cr3(dir);
+
+  inner_task_switch_asm(new);
+}
