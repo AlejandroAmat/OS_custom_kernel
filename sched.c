@@ -70,7 +70,7 @@ void init_idle (void)
   allocate_DIR(free_struct);
 
   union task_union *free_union = (union task_union *) free_struct;
-  free_union->stack[KERNEL_STACK_SIZE - 2] = 0; //ebp !!sizeof(long)?
+  free_union->stack[KERNEL_STACK_SIZE - 2] = 0; //ebp
   free_union->stack[KERNEL_STACK_SIZE - 1] = (long unsigned int) cpu_idle;
 
   free_struct->kernel_esp = (int *) &free_union->stack[KERNEL_STACK_SIZE - 2];
@@ -87,13 +87,12 @@ void init_task1(void)
   free_struct->PID = 1;
 
   allocate_DIR(free_struct);
-
   set_user_pages(free_struct);
 
   union task_union *free_union = (union task_union *) free_struct;
 
-  tss.esp0 = (DWord) &free_union->stack[KERNEL_STACK_SIZE];
-  writeMSR(0x175, (long int) &free_union->stack[KERNEL_STACK_SIZE]);
+  tss.esp0 = (DWord) KERNEL_ESP(free_union);
+  writeMSR(0x175, (long int) KERNEL_ESP(free_union));
 
   page_table_entry* dir = get_DIR(free_struct);
   set_cr3(dir);
@@ -122,8 +121,8 @@ struct task_struct* current()
 }
 
 void inner_task_switch(union task_union *new) {
-  tss.esp0 = (DWord) &new->stack[KERNEL_STACK_SIZE];
-  writeMSR(0x175, (long int) &new->stack[KERNEL_STACK_SIZE]);
+  tss.esp0 = (DWord) KERNEL_ESP(new);
+  writeMSR(0x175, (long int) KERNEL_ESP(new));
 
   struct task_struct *new_struct = (struct task_struct *) new;
   page_table_entry *dir = get_DIR(new_struct);

@@ -5,7 +5,7 @@ ENTRY(writeMSR)
   movl %esp, %ebp
   movl 8(%ebp), %ecx
   movl 12(%ebp), %eax
-  movl 16(%ebp), %edx
+  movl $0, %edx
   wrmsr
   movl %ebp, %esp
   popl %ebp

@@ -12,7 +12,7 @@ int __attribute__ ((__section__(".text.main")))
 
   write(1, "write test\n", 11);
   char buff[20];
-  itoa(gettime(), buff);
+  itoa(getpid(), buff);
   write(1, buff, strlen(buff));
   while(1) {}
 }
