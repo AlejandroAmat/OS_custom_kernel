@@ -30,6 +30,7 @@ SYSOBJ = \
 	sched.o \
 	sched_asm.o \
 	sys.o \
+	sys_asm.o \
 	mm.o \
 	devices.o \
 	utils.o \
@@ -76,7 +77,10 @@ wrappers.s:wrappers.S $(INCLUDEDIR)/asm.h
 msr.s: msr.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
-sched_asm.s:sched_asm.S $(INCLUDEDIR)/asm.h # $(INCLUDEDIR)/sched.h
+sched_asm.s: sched_asm.S $(INCLUDEDIR)/asm.h
+	$(CPP) $(ASMFLAGS) -o $@ $<
+
+sys_asm.s: sys_asm.S $(INCLUDEDIR)/asm.h
 	$(CPP) $(ASMFLAGS) -o $@ $<
 
 user.o:user.c $(INCLUDEDIR)/libc.h

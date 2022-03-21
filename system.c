@@ -20,6 +20,7 @@ unsigned int *p_rdtr = (unsigned int *) KERNEL_START+2;
 void writeMSR(int msr_num, long int value);
 void system_call_handler();
 
+extern int last_PID;
 extern int zeos_ticks;
 
 /************************/
@@ -100,6 +101,7 @@ int __attribute__((__section__(".text.main")))
   /* Move user code/data now (after the page table initialization) */
   copy_data((void *) KERNEL_START + *p_sys_size, usr_main, *p_usr_size);
 
+  last_PID = 123;
   zeos_ticks = 0;
 
   printk("Entering user mode...");

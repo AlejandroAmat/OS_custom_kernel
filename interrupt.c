@@ -100,6 +100,8 @@ void clock_routine()
   zeos_show_clock();
 }
 
+#include <list.h>
+
 void keyboard_routine()
 {
   Byte key = inb(0x60);

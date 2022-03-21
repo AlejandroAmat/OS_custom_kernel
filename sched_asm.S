@@ -20,7 +20,7 @@ ENTRY(inner_task_switch_asm)
   movl %esp, %ebp
   call current
   movl (%ebp), %ecx   # ecx <- %ebp inner_task_switch
-  movl %ecx, 4(%eax)  # current().kernel_esp <- ecx
+  movl %ecx, 4(%eax)  # current()->kernel_esp <- ecx
   movl 8(%ebp), %eax  # eax <- @new
   movl 4(%eax), %esp  # esp <- new.kernel_esp
   popl %ebp
