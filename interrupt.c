@@ -14,6 +14,7 @@ Register    idtR;
 
 void clock_handler();
 void keyboard_handler();
+void schedule(void);
 
 extern int zeos_ticks;
 
@@ -98,9 +99,10 @@ void clock_routine()
 {
   ++zeos_ticks;
   zeos_show_clock();
-}
 
-#include <list.h>
+  if (current() == idle_task && current()->PID != 0)
+    schedule();
+}
 
 void keyboard_routine()
 {

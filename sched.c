@@ -16,11 +16,14 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
 
 extern TSS tss;
 extern struct list_head blocked;
+
 void writeMSR(int msr_num, long int value);
 void return_gate(Word ds, Word ss, DWord esp, Word cs, DWord eip);
+void task_switch(union task_union *new);
 void inner_task_switch_asm(union task_union *new);
 int main(void);
 
+int current_process_time;
 struct list_head freequeue;
 struct list_head readyqueue;
 struct task_struct *idle_task;
@@ -47,6 +50,14 @@ int allocate_DIR(struct task_struct *t)
 	t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos]; 
 
 	return 1;
+}
+
+int get_quantum(struct task_struct *t) {
+  return t->quantum;
+}
+
+void set_quantum(struct task_struct *t, int new_quantum) {
+  t->quantum = new_quantum;
 }
 
 void cpu_idle(void)
@@ -85,6 +96,9 @@ void init_task1(void)
 
   struct task_struct *free_struct = list_head_to_task_struct(free_list);
   free_struct->PID = 1;
+  INIT_LIST_HEAD(&free_struct->list);
+  set_quantum(free_struct, 6);
+  current_process_time = get_quantum(free_struct);
 
   allocate_DIR(free_struct);
   set_user_pages(free_struct);
@@ -129,4 +143,58 @@ void inner_task_switch(union task_union *new) {
   set_cr3(dir);
 
   inner_task_switch_asm(new);
+}
+
+volatile void sched_next_rr(void) {
+  int is_alone = list_is_last(&current()->list, &readyqueue) || (current() == idle_task && list_empty(&readyqueue));
+  struct task_struct *to_change = NULL;
+
+  if (is_alone) {
+    struct list_head *first_ready = list_first(&readyqueue);
+    if (current() != list_head_to_task_struct(first_ready))
+      to_change = idle_task;
+
+  } else {
+    struct list_head *change_list = readyqueue.next->next;
+    to_change = list_head_to_task_struct(change_list);
+    update_process_state_rr(to_change, NULL);
+  }
+
+  if (to_change != NULL) {
+    current_process_time = get_quantum(to_change);
+    task_switch((union task_union *) to_change);
+  }
+}
+
+void update_process_state_rr(struct task_struct *t, struct list_head *dst_queue) {
+  if (list_empty(&t->list))
+    list_del(&t->list);
+
+  if (dst_queue != NULL)
+    list_add(&t->list, dst_queue);
+}
+
+int needs_sched_rr(void) {
+  return current_process_time == 0 || !list_empty(&current()->list) || current() == idle_task;
+}
+
+void update_sched_data_rr(void) {
+  --current_process_time;
+}
+
+void schedule(void) {
+  update_sched_data_rr();
+
+  if (needs_sched_rr()) {
+    if (list_empty(&current()->list)) {
+
+      struct list_head *dst_queue = NULL;
+      if (current() != idle_task)
+        dst_queue = &readyqueue;
+
+      update_process_state_rr(current(), dst_queue);
+    }
+
+    sched_next_rr();
+  }
 }

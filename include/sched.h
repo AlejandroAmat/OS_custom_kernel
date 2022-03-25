@@ -18,6 +18,7 @@ struct task_struct {
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   int *kernel_esp;
   struct list_head list;
+  int quantum;
   page_table_entry * dir_pages_baseAddr;
 };
 
