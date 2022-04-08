@@ -71,15 +71,19 @@
 
 ENTRY(clock_handler)
   SAVE_ALL
+  call update_stats_user_to_system
   EOI
   call clock_routine
+  call update_stats_leave_system
   RESTORE_ALL
   iret
 
 ENTRY(keyboard_handler)
   SAVE_ALL
+  call update_stats_user_to_system
   call keyboard_routine
   EOI
+  call update_stats_leave_system
   RESTORE_ALL
   iret
 
@@ -90,6 +94,8 @@ ENTRY(system_call_handler)
   pushl $__USER_CS
   pushl 4(%ebp)
   SAVE_ALL
+  call update_stats_user_to_system
+  movl 24(%esp), %eax
   cmpl $0, %eax
   jl sysenter_err
   cmpl $MAX_SYSCALL, %eax
@@ -100,6 +106,7 @@ sysenter_err:
   movl $-ENOSYS, %eax
 sysenter_fin:
   movl %eax, 24(%esp)
+  call update_stats_leave_system
   RESTORE_ALL
   movl (%esp), %edx
   movl 12(%esp), %ecx

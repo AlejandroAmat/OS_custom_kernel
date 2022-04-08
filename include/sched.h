@@ -7,6 +7,7 @@
 
 #include <list.h>
 #include <types.h>
+#include <stats.h>
 #include <mm_address.h>
 
 #define NR_TASKS      10
@@ -19,6 +20,7 @@ struct task_struct {
   int *kernel_esp;
   struct list_head list;
   int quantum;
+  struct stats pstats;
   page_table_entry * dir_pages_baseAddr;
 };
 

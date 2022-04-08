@@ -1,16 +1,16 @@
 #include <asm.h>
 
-ENTRY(getpid)
+ENTRY(exit)
   pushl %ebp
   movl %esp, %ebp
   pushl %ecx
   pushl %edx
-  movl $20, %eax
-  pushl $getpid_return
+  movl $1, %eax
+  pushl $exit_return
   pushl %ebp
   movl %esp, %ebp
   sysenter
-getpid_return:
+exit_return:
   movl %ebp, %esp
   popl %ebp
   cmpl $0, %eax
@@ -18,7 +18,7 @@ getpid_return:
   neg %eax
   movl %eax, errno
   movl $-1, %eax
-getpid_endif:
+exit_endif:
   popl %edx
   popl %ecx
   movl %ebp, %esp
@@ -99,6 +99,59 @@ gettime_return:
   movl %eax, errno
   movl $-1, %eax
 gettime_endif:
+  popl %edx
+  popl %ecx
+  movl %ebp, %esp
+  popl %ebp
+  ret
+
+ENTRY(getpid)
+  pushl %ebp
+  movl %esp, %ebp
+  pushl %ecx
+  pushl %edx
+  movl $20, %eax
+  pushl $getpid_return
+  pushl %ebp
+  movl %esp, %ebp
+  sysenter
+getpid_return:
+  movl %ebp, %esp
+  popl %ebp
+  cmpl $0, %eax
+  jge getpid_endif
+  neg %eax
+  movl %eax, errno
+  movl $-1, %eax
+getpid_endif:
+  popl %edx
+  popl %ecx
+  movl %ebp, %esp
+  popl %ebp
+  ret
+
+ENTRY(get_stats)
+  pushl %ebp
+  movl %esp, %ebp
+  pushl %ebx
+  pushl %ecx
+  pushl %edx
+  movl 8(%ebp), %ebx
+  movl 12(%ebp), %ecx
+  movl $35, %eax
+  pushl $get_stats_return
+  pushl %ebp
+  movl %esp, %ebp
+  sysenter
+get_stats_return:
+  movl %ebp, %esp
+  popl %ebp
+  cmpl $0, %eax
+  jge get_stats_endif
+  neg %eax
+  movl %eax, errno
+  movl $-1, %eax
+get_stats_endif:
   popl %edx
   popl %ecx
   movl %ebp, %esp
