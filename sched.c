@@ -79,6 +79,7 @@ void init_idle (void) {
   free_union->stack[KERNEL_STACK_SIZE - 2] = 0; //ebp
   free_union->stack[KERNEL_STACK_SIZE - 1] = (long unsigned int) cpu_idle;
 
+  //TODO
   free_struct->kernel_esp = (int *) &free_union->stack[KERNEL_STACK_SIZE - 2];
   free_struct->pstats.user_ticks = 0;
   free_struct->pstats.system_ticks = 0;
@@ -94,6 +95,7 @@ void init_task1(void) {
   struct list_head *free_list = list_first(&freequeue);
   list_del(free_list);
 
+  //TODO
   struct task_struct *free_struct = list_head_to_task_struct(free_list);
   free_struct->PID = 1;
   INIT_LIST_HEAD(free_list);
@@ -168,15 +170,18 @@ void update_stats_ready_to_system(struct task_struct *to_change) {
 }
 
 void sched_next_rr(void) {
-  int is_alone = list_is_last(&current()->list, &readyqueue) || (current() == idle_task && list_empty(&readyqueue));
+  int is_alone = list_is_last(&current()->list, &readyqueue) || list_empty(&readyqueue);
   struct task_struct *to_change = NULL;
 
   if (is_alone) {
-    if (list_is_last(&current()->list, &readyqueue))
+    if (current() != idle_task)
       to_change = idle_task;
 
   } else {
-    struct list_head *change_list = list_first(&readyqueue)->next;
+    struct list_head *change_list = list_first(&readyqueue);
+    if (&current()->list == change_list)
+      change_list = change_list->next;
+
     to_change = list_head_to_task_struct(change_list);
     update_process_state_rr(to_change, NULL);
   }

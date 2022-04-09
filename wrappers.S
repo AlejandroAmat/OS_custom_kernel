@@ -67,6 +67,7 @@ ENTRY(write)
 write_return:
   movl %ebp, %esp
   popl %ebp
+  addl $4, %esp
   cmpl $0, %eax
   jge write_endif
   neg %eax
@@ -146,6 +147,7 @@ ENTRY(get_stats)
 get_stats_return:
   movl %ebp, %esp
   popl %ebp
+  addl $4, %esp
   cmpl $0, %eax
   jge get_stats_endif
   neg %eax
@@ -154,6 +156,7 @@ get_stats_return:
 get_stats_endif:
   popl %edx
   popl %ecx
+  popl %ebx
   movl %ebp, %esp
   popl %ebp
   ret
