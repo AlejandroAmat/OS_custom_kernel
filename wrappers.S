@@ -13,8 +13,9 @@ ENTRY(exit)
 exit_return:
   movl %ebp, %esp
   popl %ebp
+  addl $4, %esp
   cmpl $0, %eax
-  jge getpid_endif
+  jge exit_endif
   neg %eax
   movl %eax, errno
   movl $-1, %eax
@@ -38,6 +39,7 @@ ENTRY(fork)
 fork_return:
   movl %ebp, %esp
   popl %ebp
+  addl $4, %esp
   cmpl $0, %eax
   jge fork_endif
   neg %eax
@@ -94,6 +96,7 @@ ENTRY(gettime)
 gettime_return:
   movl %ebp, %esp
   popl %ebp
+  addl $4, %esp
   cmpl $0, %eax
   jge gettime_endif
   neg %eax
@@ -119,6 +122,7 @@ ENTRY(getpid)
 getpid_return:
   movl %ebp, %esp
   popl %ebp
+  addl $4, %esp
   cmpl $0, %eax
   jge getpid_endif
   neg %eax
