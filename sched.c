@@ -57,6 +57,15 @@ void set_quantum(struct task_struct *t, int new_quantum) {
   t->quantum = new_quantum;
 }
 
+void init_stats(struct task_struct *t) {
+  t->pstats.user_ticks = 0;
+  t->pstats.system_ticks = 0;
+  t->pstats.blocked_ticks = 0;
+  t->pstats.ready_ticks = 0;
+  t->pstats.elapsed_total_ticks = get_ticks();
+  t->pstats.total_trans = 0;
+}
+
 void cpu_idle(void) {
 	__asm__ __volatile__("sti": : :"memory");
 
@@ -79,14 +88,8 @@ void init_idle (void) {
   free_union->stack[KERNEL_STACK_SIZE - 2] = 0; //ebp
   free_union->stack[KERNEL_STACK_SIZE - 1] = (long unsigned int) cpu_idle;
 
-  //TODO
   free_struct->kernel_esp = (int *) &free_union->stack[KERNEL_STACK_SIZE - 2];
-  free_struct->pstats.user_ticks = 0;
-  free_struct->pstats.system_ticks = 0;
-  free_struct->pstats.blocked_ticks = 0;
-  free_struct->pstats.ready_ticks = 0;
-  free_struct->pstats.elapsed_total_ticks = get_ticks();
-  free_struct->pstats.total_trans = 0;
+  init_stats(free_struct);
 
   idle_task = free_struct;
 }
@@ -95,17 +98,11 @@ void init_task1(void) {
   struct list_head *free_list = list_first(&freequeue);
   list_del(free_list);
 
-  //TODO
   struct task_struct *free_struct = list_head_to_task_struct(free_list);
   free_struct->PID = 1;
   INIT_LIST_HEAD(free_list);
   set_quantum(free_struct, 6);
-  free_struct->pstats.user_ticks = 0;
-  free_struct->pstats.system_ticks = 0;
-  free_struct->pstats.blocked_ticks = 0;
-  free_struct->pstats.ready_ticks = 0;
-  free_struct->pstats.elapsed_total_ticks = get_ticks();
-  free_struct->pstats.total_trans = 0;
+  init_stats(free_struct);
   free_struct->pstats.remaining_ticks = get_quantum(free_struct);
 
   allocate_DIR(free_struct);

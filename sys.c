@@ -21,6 +21,7 @@
 int last_PID;
 int zeos_ticks;
 void schedule(void);
+void init_stats(struct task_struct *t);
 void sys_fork_asm(struct task_struct *new);
 extern struct list_head freequeue;
 extern struct list_head readyqueue;
@@ -90,12 +91,7 @@ int sys_fork() {
 
   new_struct->PID = ++last_PID;
   INIT_LIST_HEAD(new_list);
-  new_struct->pstats.user_ticks = 0;
-  new_struct->pstats.system_ticks = 0;
-  new_struct->pstats.blocked_ticks = 0;
-  new_struct->pstats.ready_ticks = 0;
-  new_struct->pstats.elapsed_total_ticks = get_ticks();
-  new_struct->pstats.total_trans = 0;
+  init_stats(new_struct);
   new_struct->pstats.remaining_ticks = 0;
 
   sys_fork_asm(new_struct);
@@ -140,23 +136,27 @@ int sys_gettime() {
   return zeos_ticks;
 }
 
-//TODO
+int copy_stats_if_pid_equal(int pid, struct task_struct *t, struct stats *st) {
+  if (t->PID == pid) {
+    copy_to_user(&t->pstats, st, sizeof(struct stats));
+    return 1;
+
+  } else
+    return 0;
+}
+
 int sys_get_stats(int pid, struct stats *st) {
   if (st == NULL)
     return -EFAULT;
 
-  if (current()->PID == pid) {
-    copy_to_user(&current()->pstats, st, sizeof(struct stats));
+  if (copy_stats_if_pid_equal(pid, current(), st))
     return 0;
-  }
 
   struct list_head *element;
   list_for_each(element, &readyqueue) {
     struct task_struct *to_check = list_head_to_task_struct(element);
-    if (to_check->PID == pid) {
-      copy_to_user(&to_check->pstats, st, sizeof(struct stats));
+    if (copy_stats_if_pid_equal(pid, to_check, st))
       return 0;
-    }
   }
 
   return -EINVAL;
