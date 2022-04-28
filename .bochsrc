@@ -1,9 +1,10 @@
-# Find more info about the '.bochsrc' file in the
-# Bochs User Manual: http://bochs.sourceforge.net/doc/docbook/user/bochsrc.html
+#romimage: file=$BXSHARE/BIOS-bochs-latest
+#vgaromimage: file=$BXSHARE/VGABIOS-elpin-2.40
 megs: 16
 
 floppya: 1_44=./zeos.bin, status=inserted
 boot: floppy
+floppy_bootsig_check: disabled=0
 
 log: bochsout.txt
 panic: action=ask
@@ -12,8 +13,10 @@ info: action=report
 debug: action=ignore
 debugger_log: -
 
-port_e9_hack: enabled=1
-
-# Uncomment next line to enable GUI debugger
-#display_library: x, options="gui_debug"
+#vga_update_interval: 300000
+#keyboard_serial_delay: 250
+#keyboard_paste_delay: 100000
+#mouse: enabled=0
+#private_colormap: enabled=0
+#keyboard_mapping: enabled=0, map=
 

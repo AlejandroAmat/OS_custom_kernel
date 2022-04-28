@@ -7,19 +7,15 @@
 #include <hardware.h>
 #include <io.h>
 
+#include <sched.h>
+
 #include <zeos_interrupt.h>
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
 
-void clock_handler();
-void keyboard_handler();
-void schedule(void);
-
-extern int zeos_ticks;
-extern struct task_struct *idle_task;
-
-char char_map[] = {
+char char_map[] =
+{
   '\0','\0','1','2','3','4','5','6',
   '7','8','9','0','\'','¡','\0','\0',
   'q','w','e','r','t','y','u','i',
@@ -35,7 +31,25 @@ char char_map[] = {
   '\0','\0'
 };
 
-void setInterruptHandler(int vector, void (*handler)(), int maxAccessibleFromPL) {
+int zeos_ticks = 0;
+
+void clock_routine()
+{
+  zeos_show_clock();
+  zeos_ticks ++;
+  
+  schedule();
+}
+
+void keyboard_routine()
+{
+  unsigned char c = inb(0x60);
+  
+  if (c&0x80) printc_xy(0, 0, char_map[c&0x7f]);
+}
+
+void setInterruptHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
+{
   /***********************************************************************/
   /* THE INTERRUPTION GATE FLAGS:                          R1: pg. 5-11  */
   /* ***************************                                         */
@@ -54,7 +68,8 @@ void setInterruptHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
   idt[vector].highOffset      = highWord((DWord)handler);
 }
 
-void setTrapHandler(int vector, void (*handler)(), int maxAccessibleFromPL) {
+void setTrapHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
+{
   /***********************************************************************/
   /* THE TRAP GATE FLAGS:                                  R1: pg. 5-11  */
   /* ********************                                                */
@@ -77,8 +92,21 @@ void setTrapHandler(int vector, void (*handler)(), int maxAccessibleFromPL) {
   idt[vector].highOffset      = highWord((DWord)handler);
 }
 
+void clock_handler();
+void keyboard_handler();
+void system_call_handler();
 
-void setIdt() {
+void setMSR(unsigned long msr_number, unsigned long high, unsigned long low);
+
+void setSysenter()
+{
+  setMSR(0x174, 0, __KERNEL_CS);
+  setMSR(0x175, 0, INITIAL_ESP);
+  setMSR(0x176, 0, (unsigned long)system_call_handler);
+}
+
+void setIdt()
+{
   /* Program interrups/exception service routines */
   idtR.base  = (DWord)idt;
   idtR.limit = IDT_ENTRIES * sizeof(Gate) - 1;
@@ -86,35 +114,11 @@ void setIdt() {
   set_handlers();
 
   /* ADD INITIALIZATION CODE FOR INTERRUPT VECTOR */
-  setTrapHandler(32, clock_handler, 0);
-  setTrapHandler(33, keyboard_handler, 0);
+  setInterruptHandler(32, clock_handler, 0);
+  setInterruptHandler(33, keyboard_handler, 0);
+
+  setSysenter();
 
   set_idt_reg(&idtR);
 }
 
-void clock_routine() {
-  ++zeos_ticks;
-  zeos_show_clock();
-
-  if (current() == idle_task || current()->PID != 0)
-    schedule();
-}
-
-void keyboard_routine() {
-  Byte key = inb(0x60);
-
-  if ((key & 0x80) == 0) {
-    key &= 0x7F;
-
-    char character;
-    if (key > sizeof(char_map))
-      character = 'C';
-    else
-      character = char_map[key];
-
-    if (character == '\0')
-      character = 'C';
-
-    printc_xy(2, 2, character);
-  }
-}

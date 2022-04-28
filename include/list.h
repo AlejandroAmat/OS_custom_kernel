@@ -19,7 +19,7 @@ struct list_head {
  *   struct element {
  *     int a;
  *     char b;
- *     struct list_head anchor; //This is the anchor in the list
+ *     struct list head anchor; //This is the anchor in the list
  *     ...
  *   };
  *
@@ -37,13 +37,10 @@ struct list_head {
  *
  *   // Get the container of this list element
  *   struct element * realelement = list_entry( e, struct element, anchor );
- *   realelement->a = 0x666;
  *
  *   // Traverse  the list
  *   list_for_each( e, &list ) {
- *      // do whatever with 'e'
- *		struct element * realelement = list_entry( e, struct element, anchor );
- *		...
+ *      ... // do whatever with 'e'
  *   }
  */
 
