@@ -14,6 +14,40 @@ ENTRY(SYSENTER_RETURN)
 	pop %ecx
 	ret
 
+/* void exit() */
+ENTRY(exit)
+	pushl %ebp
+	movl %esp, %ebp
+	movl $1, %eax
+	call syscall_sysenter
+	popl %ebp
+	ret
+
+/* int fork() */
+ENTRY(fork)
+	pushl %ebp
+	movl %esp, %ebp
+	movl $2, %eax
+	call syscall_sysenter
+	test %eax, %eax
+	js nok;	// if (eax < 0) -->
+	popl %ebp
+	ret
+
+/* int get_key(char *c) */
+ENTRY(get_key)
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx;  // Save EBX, ESI and EDI if modified
+	movl $3, %eax
+	movl 0x8(%ebp), %ebx;	//
+	call syscall_sysenter
+	popl %ebx
+	test %eax, %eax
+	js nok;	// if (eax < 0) -->
+	popl %ebp
+	ret
+
 /* int write(int fd, char *buffer, int size) */
 ENTRY(write)
 	pushl %ebp
@@ -56,26 +90,6 @@ ENTRY(getpid)
 	popl %ebp
 	ret
 
-/* int fork() */
-ENTRY(fork)
-	pushl %ebp
-	movl %esp, %ebp
-	movl $2, %eax
-	call syscall_sysenter
-	test %eax, %eax
-	js nok	// if (eax < 0) -->
-	popl %ebp
-	ret
-
-/* void exit() */
-ENTRY(exit)
-	pushl %ebp
-	movl %esp, %ebp
-	movl $1, %eax
-	call syscall_sysenter
-	popl %ebp
-	ret
-
 /* int yield() */
 ENTRY(yield)
 	pushl %ebp
@@ -96,7 +110,6 @@ ENTRY(get_stats)
 	call syscall_sysenter
 	popl %ebx
 	test %eax, %eax
-	js nok	// if (eax < 0) -->
+	js nok;	// if (eax < 0) -->
 	popl %ebp
 	ret
-

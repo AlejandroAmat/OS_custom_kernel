@@ -209,6 +209,19 @@ void sys_exit()
   sched_next_rr();
 }
 
+extern struct Buffer key_buffer;
+char read_char(struct Buffer *buffer);
+
+int sys_get_key(char *c) {
+  if (c == NULL)
+    return -EFAULT;
+  char d = read_char(&key_buffer);
+  copy_to_user(&d, c, sizeof(char));
+  if (*c == (char)80)
+    printk("Test");
+  return 0;
+}
+
 /* System call to force a task switch */
 int sys_yield()
 {

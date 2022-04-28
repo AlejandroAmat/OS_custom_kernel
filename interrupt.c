@@ -11,6 +11,8 @@
 
 #include <zeos_interrupt.h>
 
+#define KEY_BUFFER_SIZE 256
+
 Gate idt[IDT_ENTRIES];
 Register    idtR;
 
@@ -33,6 +35,33 @@ char char_map[] =
 
 int zeos_ticks = 0;
 
+struct Buffer {
+  char array[KEY_BUFFER_SIZE];
+  char *read;
+  char *write;
+  int size;
+};
+struct Buffer key_buffer = {{}, key_buffer.array, key_buffer.array, 0};
+
+char *next_char(char *index) {
+  ++index;
+  if (index == &key_buffer.array[KEY_BUFFER_SIZE])
+    index = key_buffer.array;
+  return index;
+}
+
+char read_char(struct Buffer *buffer) {
+  char c = *buffer->read;
+  next_char(buffer->read);
+  return c;
+}
+
+void write_char(char c, struct Buffer *buffer) {
+  *buffer->write = c;
+  ++buffer->size;
+  buffer->write = next_char(buffer->write);
+}
+
 void clock_routine()
 {
   zeos_show_clock();
@@ -45,7 +74,10 @@ void keyboard_routine()
 {
   unsigned char c = inb(0x60);
   
-  if (c&0x80) printc_xy(0, 0, char_map[c&0x7f]);
+  if (c&0x80) {
+    c &= 0x7f;
+    write_char(c, &key_buffer);
+  }
 }
 
 void setInterruptHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
