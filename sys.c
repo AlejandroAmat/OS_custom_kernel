@@ -210,15 +210,15 @@ void sys_exit()
 }
 
 extern struct Buffer key_buffer;
-char read_char(struct Buffer *buffer);
+char *read_char(struct Buffer *buffer);
 
 int sys_get_key(char *c) {
   if (c == NULL)
     return -EFAULT;
-  char d = read_char(&key_buffer);
-  copy_to_user(&d, c, sizeof(char));
-  if (*c == (char)80)
-    printk("Test");
+  char *d = read_char(&key_buffer);
+  if (d == NULL)
+    return -EAGAIN;
+  copy_to_user(d, c, sizeof(char));
   return 0;
 }
 

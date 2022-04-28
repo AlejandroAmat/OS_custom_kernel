@@ -11,7 +11,7 @@
 
 #include <zeos_interrupt.h>
 
-#define KEY_BUFFER_SIZE 256
+#define BUFFER_SIZE 256
 
 Gate idt[IDT_ENTRIES];
 Register    idtR;
@@ -36,30 +36,35 @@ char char_map[] =
 int zeos_ticks = 0;
 
 struct Buffer {
-  char array[KEY_BUFFER_SIZE];
+  char array[BUFFER_SIZE];
   char *read;
   char *write;
   int size;
 };
 struct Buffer key_buffer = {{}, key_buffer.array, key_buffer.array, 0};
 
-char *next_char(char *index) {
+char *next_char(char *index, struct Buffer *buffer) {
   ++index;
-  if (index == &key_buffer.array[KEY_BUFFER_SIZE])
-    index = key_buffer.array;
+  if (index == &buffer->array[BUFFER_SIZE])
+    index = buffer->array;
   return index;
 }
 
-char read_char(struct Buffer *buffer) {
-  char c = *buffer->read;
-  next_char(buffer->read);
+char *read_char(struct Buffer *buffer) {
+  char *c;
+  if (buffer->size > 0) {
+    c = buffer->read;
+    --buffer->size;
+    buffer->read = next_char(buffer->read, buffer);
+  } else
+    c = NULL;
   return c;
 }
 
 void write_char(char c, struct Buffer *buffer) {
   *buffer->write = c;
   ++buffer->size;
-  buffer->write = next_char(buffer->write);
+  buffer->write = next_char(buffer->write, buffer);
 }
 
 void clock_routine()
