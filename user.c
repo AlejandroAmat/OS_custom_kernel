@@ -12,8 +12,8 @@ int __attribute__ ((__section__(".text.main")))
   char c;
   int error = get_key(&c);
   pid = fork();
-  char *screen = get_screen();
-  screen[24] = 'c';
+  char (*screen)[80][2] = (char (*)[80][2]) get_screen();
+  screen[24][32][1] = 'c';
   remove_screen(screen);
   itoa(pid, buff);
   write(1, buff, strlen(buff));

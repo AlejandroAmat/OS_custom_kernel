@@ -254,6 +254,7 @@ int sys_remove_screen(char *s) {
   del_ss_pag(process_PT, pag);
   set_cr3(get_DIR(current()));
   free_frame(get_frame(process_PT, pag));
+  return 0;
 }
 
 /* System call to force a task switch */
