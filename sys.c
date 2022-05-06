@@ -56,6 +56,17 @@ int ret_from_fork()
   return 0;
 }
 
+int get_first_free_page(page_table_entry *parent_PT) {
+  int pag = NUM_PAG_KERNEL + NUM_PAG_CODE + NUM_PAG_DATA;
+  while (pag < TOTAL_PAGES && get_frame(parent_PT, pag) != 0)
+    ++pag;
+
+  if (pag == TOTAL_PAGES)
+    return -EAGAIN;
+
+  return pag;
+}
+
 int sys_fork(void)
 {
   struct list_head *lhcurrent = NULL;
@@ -75,9 +86,13 @@ int sys_fork(void)
   
   /* new pages dir */
   allocate_DIR((struct task_struct*)uchild);
-  
-  /* Allocate pages for DATA+STACK */
+
   int new_ph_pag, pag, i;
+  page_table_entry *parent_PT = get_PT(current());
+
+  int temp_pag = get_first_free_page(parent_PT);
+
+  /* Allocate pages for DATA+STACK */
   page_table_entry *process_PT = get_PT(&uchild->task);
   for (pag=0; pag<NUM_PAG_DATA; pag++)
   {
@@ -96,14 +111,13 @@ int sys_fork(void)
       }
       /* Deallocate task_struct */
       list_add_tail(lhcurrent, &freequeue);
-      
+
       /* Return error */
-      return -EAGAIN; 
+      return -EAGAIN;
     }
   }
 
   /* Copy parent's SYSTEM and CODE to child. */
-  page_table_entry *parent_PT = get_PT(current());
   for (pag=0; pag<NUM_PAG_KERNEL; pag++)
   {
     set_ss_pag(process_PT, pag, get_frame(parent_PT, pag));
@@ -116,12 +130,12 @@ int sys_fork(void)
   for (pag=NUM_PAG_KERNEL+NUM_PAG_CODE; pag<NUM_PAG_KERNEL+NUM_PAG_CODE+NUM_PAG_DATA; pag++)
   {
     /* Map one child page to parent's address space. */
-    set_ss_pag(parent_PT, pag+NUM_PAG_DATA, get_frame(process_PT, pag));
-    copy_data((void*)(pag<<12), (void*)((pag+NUM_PAG_DATA)<<12), PAGE_SIZE);
-    del_ss_pag(parent_PT, pag+NUM_PAG_DATA);
+    set_ss_pag(parent_PT, temp_pag, get_frame(process_PT, pag));
+    copy_data((void*)(pag<<12), (void*)(temp_pag<<12), PAGE_SIZE);
+    del_ss_pag(parent_PT, temp_pag);
+    /* Deny access to the child's memory space */
+    set_cr3(get_DIR(current()));
   }
-  /* Deny access to the child's memory space */
-  set_cr3(get_DIR(current()));
 
   uchild->task.PID=++global_PID;
   uchild->task.state=ST_READY;
@@ -213,13 +227,33 @@ extern struct Buffer key_buffer;
 char *read_char(struct Buffer *buffer);
 
 int sys_get_key(char *c) {
-  if (c == NULL)
+  if (!access_ok(VERIFY_WRITE, c, sizeof(char)))
     return -EFAULT;
   char *d = read_char(&key_buffer);
   if (d == NULL)
     return -EAGAIN;
   copy_to_user(d, c, sizeof(char));
   return 0;
+}
+
+char *sys_get_screen() {
+  page_table_entry *process_PT = get_PT(current());
+  int pag = get_first_free_page(process_PT);
+  int new_ph_pag = alloc_frame();
+//   if (new_ph_pag == -1)
+  set_ss_pag(process_PT, pag, new_ph_pag);
+  return (char *) (pag << 12);
+}
+
+int sys_remove_screen(char *s) {
+  page_table_entry *process_PT = get_PT(current());
+  int pag = (int) s >> 12;
+  if (pag >= TOTAL_PAGES || pag < NUM_PAG_KERNEL + NUM_PAG_CODE + NUM_PAG_DATA
+    || get_frame(process_PT, pag) == 0)
+    return -EFAULT;
+  del_ss_pag(process_PT, pag);
+  set_cr3(get_DIR(current()));
+  free_frame(get_frame(process_PT, pag));
 }
 
 /* System call to force a task switch */

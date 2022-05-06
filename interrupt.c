@@ -62,9 +62,11 @@ char *read_char(struct Buffer *buffer) {
 }
 
 void write_char(char c, struct Buffer *buffer) {
-  *buffer->write = c;
-  ++buffer->size;
-  buffer->write = next_char(buffer->write, buffer);
+  if (buffer->size < BUFFER_SIZE) {
+    *buffer->write = c;
+    ++buffer->size;
+    buffer->write = next_char(buffer->write, buffer);
+  }
 }
 
 void clock_routine()

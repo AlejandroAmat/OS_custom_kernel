@@ -64,6 +64,29 @@ ENTRY(write)
 	popl %ebp
 	ret
 
+/* char *get_screen() */
+ENTRY(get_screen)
+	pushl %ebp
+	movl %esp, %ebp
+	movl $5, %eax
+	call syscall_sysenter
+	popl %ebp
+	ret
+
+/* int remove_screen(char *s) */
+ENTRY(remove_screen)
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx;  // Save EBX, ESI and EDI if modified
+	movl $6, %eax
+	movl 0x8(%ebp), %ebx;	//
+	call syscall_sysenter
+	popl %ebx
+	test %eax, %eax
+	js nok	// if (eax < 0) ->
+	popl %ebp
+	ret
+
 /* Common code for negative return */
 nok:
 	neg %eax

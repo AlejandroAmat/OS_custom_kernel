@@ -11,5 +11,12 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
   char c;
   int error = get_key(&c);
+  pid = fork();
+  char *screen = get_screen();
+  screen[24] = 'c';
+  remove_screen(screen);
+  itoa(pid, buff);
+  write(1, buff, strlen(buff));
+  write(1, "\n", 1);
   while(1) { }
 }
