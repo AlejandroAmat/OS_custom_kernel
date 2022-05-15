@@ -74,6 +74,8 @@ void clock_routine()
   zeos_show_clock();
   zeos_ticks ++;
   
+  //current()->callback_function(screen) in user mode
+
   schedule();
 }
 
@@ -83,7 +85,7 @@ void keyboard_routine()
   
   if (c&0x80) {
     c &= 0x7f;
-    write_char(c, &key_buffer);
+    write_char(char_map[c], &key_buffer);
   }
 }
 

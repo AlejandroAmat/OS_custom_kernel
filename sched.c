@@ -177,6 +177,8 @@ void init_idle (void)
 
   c->register_esp=(int)&(uc->stack[KERNEL_STACK_SIZE-2]); /* top of the stack */
 
+  c->callback_function = NULL;
+
   idle_task=c;
 }
 
@@ -205,6 +207,8 @@ void init_task1(void)
 
   tss.esp0=(DWord)&(uc->stack[KERNEL_STACK_SIZE]);
   setMSR(0x175, 0, (unsigned long)&(uc->stack[KERNEL_STACK_SIZE]));
+
+  c->callback_function = NULL;
 
   set_cr3(c->dir_pages_baseAddr);
 }

@@ -87,6 +87,20 @@ ENTRY(remove_screen)
 	popl %ebp
 	ret
 
+/* int set_screen_callback(char *(*callback_function)(char*)) */
+ENTRY(set_screen_callback)
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx;  // Save EBX, ESI and EDI if modified
+	movl $7, %eax
+	movl 0x8(%ebp), %ebx;	//
+	call syscall_sysenter
+	popl %ebx
+	test %eax, %eax
+	js nok	// if (eax < 0) ->
+	popl %ebp
+	ret
+
 /* Common code for negative return */
 nok:
 	neg %eax

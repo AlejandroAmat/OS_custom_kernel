@@ -159,6 +159,7 @@ int sys_fork(void)
 
   /* Queue child process into readyqueue */
   uchild->task.state=ST_READY;
+  uchild->task.callback_function = NULL;
   list_add_tail(&(uchild->task.list), &readyqueue);
   
   return uchild->task.PID;
@@ -236,11 +237,38 @@ int sys_get_key(char *c) {
   return 0;
 }
 
+char *next_screen(char *index, struct screen_buffer *buffer) {
+  ++index;
+  if (index == &buffer->array[BUFFER_SIZE])
+    index = buffer->array;
+  return index;
+}
+
+char *read_screen(struct screen_buffer *buffer) {
+  char *screen;
+  if (buffer->size == 0) {
+
+    c = buffer->read;
+    --buffer->size;
+    buffer->read = next_screen(buffer->read, buffer);
+  } else {
+    c = NULL;
+  }
+  return c;
+}
+
+void write_screen(char *screen, struct screen_buffer *buffer) {
+  if (buffer->size < BUFFER_SIZE) {
+    *buffer->write = screen;
+    ++buffer->size;
+    buffer->write = next_screen(buffer->write, buffer);
+  }
+}
+
 char *sys_get_screen() {
   page_table_entry *process_PT = get_PT(current());
   int pag = get_first_free_page(process_PT);
   int new_ph_pag = alloc_frame();
-//   if (new_ph_pag == -1)
   set_ss_pag(process_PT, pag, new_ph_pag);
   return (char *) (pag << 12);
 }
@@ -254,6 +282,14 @@ int sys_remove_screen(char *s) {
   del_ss_pag(process_PT, pag);
   set_cr3(get_DIR(current()));
   free_frame(get_frame(process_PT, pag));
+  return 0;
+}
+
+int sys_set_screen_callback(char *(*callback_function)(char*)) {
+  if (current()->callback_function != NULL &&
+    !access_ok(VERIFY_READ, callback_function, sizeof(callback_function)))
+    return -EINVAL;
+  current()->callback_function = callback_function;
   return 0;
 }
 
