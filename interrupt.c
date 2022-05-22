@@ -16,6 +16,9 @@
 Gate idt[IDT_ENTRIES];
 Register    idtR;
 
+char *sys_get_screen();
+extern void (*screen_callback_wrapper)(void (void (*)(char *),char *));
+
 char char_map[] =
 {
   '\0','\0','1','2','3','4','5','6',
@@ -74,7 +77,20 @@ void clock_routine()
   zeos_show_clock();
   zeos_ticks ++;
   
-  //current()->callback_function(screen) in user mode
+  if (current()->callback_function != NULL && current()->screen == NULL) {
+    char *screen = sys_get_screen();
+    DWord *stack = (DWord *) sys_get_screen();
+
+    union task_union *current_union = (union task_union *) current();
+    copy_data(&current_union->stack[KERNEL_STACK_SIZE - 16], current()->registers, sizeof(current()->registers));
+    current()->screen = screen;
+
+    current_union->stack[KERNEL_STACK_SIZE - 5] = (DWord) screen_callback_wrapper; //eip
+
+    stack[KERNEL_STACK_SIZE - 1] = (DWord) screen;
+    stack[KERNEL_STACK_SIZE - 2] = (DWord) current()->callback_function;
+    current_union->stack[KERNEL_STACK_SIZE - 2] = &stack[KERNEL_STACK_SIZE - 3]; //esp
+  }
 
   schedule();
 }

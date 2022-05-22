@@ -237,34 +237,6 @@ int sys_get_key(char *c) {
   return 0;
 }
 
-char *next_screen(char *index, struct screen_buffer *buffer) {
-  ++index;
-  if (index == &buffer->array[BUFFER_SIZE])
-    index = buffer->array;
-  return index;
-}
-
-char *read_screen(struct screen_buffer *buffer) {
-  char *screen;
-  if (buffer->size == 0) {
-
-    c = buffer->read;
-    --buffer->size;
-    buffer->read = next_screen(buffer->read, buffer);
-  } else {
-    c = NULL;
-  }
-  return c;
-}
-
-void write_screen(char *screen, struct screen_buffer *buffer) {
-  if (buffer->size < BUFFER_SIZE) {
-    *buffer->write = screen;
-    ++buffer->size;
-    buffer->write = next_screen(buffer->write, buffer);
-  }
-}
-
 char *sys_get_screen() {
   page_table_entry *process_PT = get_PT(current());
   int pag = get_first_free_page(process_PT);
@@ -279,17 +251,42 @@ int sys_remove_screen(char *s) {
   if (pag >= TOTAL_PAGES || pag < NUM_PAG_KERNEL + NUM_PAG_CODE + NUM_PAG_DATA
     || get_frame(process_PT, pag) == 0)
     return -EFAULT;
+  free_frame(get_frame(process_PT, pag));
   del_ss_pag(process_PT, pag);
   set_cr3(get_DIR(current()));
-  free_frame(get_frame(process_PT, pag));
   return 0;
 }
 
-int sys_set_screen_callback(char *(*callback_function)(char*)) {
+int sys_set_screen_callback(void (*callback_function)(char*)) {
   if (current()->callback_function != NULL &&
     !access_ok(VERIFY_READ, callback_function, sizeof(callback_function)))
     return -EINVAL;
   current()->callback_function = callback_function;
+  return 0;
+}
+
+void sys_return_from_callback() {
+  union task_union *current_union = (union task_union *) current();
+  char (*screen)[80][2] = (char (*)[80][2]) current()->screen;
+  DWord *stack = (DWord *) ((current_union->stack[KERNEL_STACK_SIZE - 2]) & 0xfffff000);
+
+  copy_data(current()->registers, &current_union->stack[KERNEL_STACK_SIZE - 16], sizeof(current()->registers));
+
+  for (int i = 0; i < 25; ++i)
+    for (int j = 0; j < 80; ++j)
+      printc_xy_colour(j, i, screen[i][j][0], screen[i][j][1]);
+
+  sys_remove_screen((char *) screen);
+  sys_remove_screen((char *) stack);
+  current()->screen = NULL;
+}
+
+void (*screen_callback_wrapper)(void (void (*)(char *),char *));
+
+int sys_system_info_screen_callback_wrapper(void (*wrapper)(void (void (*)(char *),char *))) {
+  if (!access_ok(VERIFY_READ, wrapper, sizeof(wrapper)))
+    return -EINVAL;
+  screen_callback_wrapper = wrapper;
   return 0;
 }
 

@@ -101,11 +101,26 @@ ENTRY(set_screen_callback)
 	popl %ebp
 	ret
 
-/* Common code for negative return */
-nok:
-	neg %eax
-	mov %eax, errno
-	mov $-1, %eax
+/* void return_from_callback() */
+ENTRY(return_from_callback)
+	pushl %ebp
+	movl %esp, %ebp
+	movl $8, %eax
+	call syscall_sysenter
+	popl %ebx
+	ret
+
+/* int system_info_screen_callback_wrapper(void (*wrapper)(void (void (*)(char *),char *)) */
+ENTRY(system_info_screen_callback_wrapper)
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx;  // Save EBX, ESI and EDI if modified
+	movl $9, %eax
+	movl 0x8(%ebp), %ebx;	//
+	call syscall_sysenter
+	popl %ebx
+	test %eax, %eax
+	js nok	// if (eax < 0) ->
 	popl %ebp
 	ret
 
@@ -148,5 +163,13 @@ ENTRY(get_stats)
 	popl %ebx
 	test %eax, %eax
 	js nok;	// if (eax < 0) -->
+	popl %ebp
+	ret
+
+/* Common code for negative return */
+nok:
+	neg %eax
+	mov %eax, errno
+	mov $-1, %eax
 	popl %ebp
 	ret

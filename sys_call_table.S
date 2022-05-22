@@ -10,8 +10,8 @@ ENTRY (sys_call_table)
 	.long sys_get_screen					//5
 	.long sys_remove_screen				//6
 	.long sys_set_screen_callback	//7
-	.long sys_ni_syscall	//8
-	.long sys_ni_syscall	//9
+	.long sys_return_from_callback	//8
+	.long sys_system_info_screen_callback_wrapper	//9
 	.long sys_gettime	//10
 	.long sys_ni_syscall	//11
 	.long sys_ni_syscall	//12
