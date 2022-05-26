@@ -77,6 +77,8 @@ void clock_routine()
   zeos_show_clock();
   zeos_ticks ++;
   
+  schedule();
+
   if (current()->callback_function != NULL && current()->screen == NULL) {
     char *screen = sys_get_screen();
     DWord *stack = (DWord *) sys_get_screen();
@@ -91,8 +93,6 @@ void clock_routine()
     stack[KERNEL_STACK_SIZE - 2] = (DWord) current()->callback_function;
     current_union->stack[KERNEL_STACK_SIZE - 2] = &stack[KERNEL_STACK_SIZE - 3]; //esp
   }
-
-  schedule();
 }
 
 void keyboard_routine()

@@ -76,6 +76,7 @@ ENTRY(clock_handler)
       popl %eax;
       EOI
       call clock_routine;
+return_clock:
       pushl %eax;
       call system_to_user;
       popl %eax;
@@ -117,3 +118,10 @@ sysenter_fin:
 	movl 12(%esp), %ecx	      // User stack address
 	sti
 	sysexit
+
+ENTRY(asm_esp)
+  call current
+  addl $0xfc0, %eax
+  movl %eax, %esp
+  pushl $return_clock
+  ret

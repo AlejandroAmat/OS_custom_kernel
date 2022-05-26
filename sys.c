@@ -265,6 +265,8 @@ int sys_set_screen_callback(void (*callback_function)(char*)) {
   return 0;
 }
 
+void clock_handler();
+void asm_esp();
 void sys_return_from_callback() {
   union task_union *current_union = (union task_union *) current();
   char (*screen)[80][2] = (char (*)[80][2]) current()->screen;
@@ -279,6 +281,8 @@ void sys_return_from_callback() {
   sys_remove_screen((char *) screen);
   sys_remove_screen((char *) stack);
   current()->screen = NULL;
+  long *ebp = get_ebp();
+  asm_esp();
 }
 
 void (*screen_callback_wrapper)(void (void (*)(char *),char *));
