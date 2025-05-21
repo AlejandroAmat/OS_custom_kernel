@@ -35,5 +35,5 @@ A custom operating system kernel developed as a university project. This impleme
 - Process states management
 
 ## Team Members
-
+- Alejandro Amat
 - Pau Soler Miras
